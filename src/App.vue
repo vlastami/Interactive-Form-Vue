@@ -6,22 +6,132 @@ export default {
     customFavoriteColor: '',
     childrenCount: 0,
     children: [],
+    firstName: '',
+    lastName: '',
+    personalIdNumber: '',
+    personalIdNumberIsValid: null,
+    personalIdNumberErrorMessage: '',
   }),
 
   methods: {
     displayThumbnail (e) {
       this.profilePictureUrl = URL.createObjectURL(e.target.files[0]);
-    }
+    },
+    onSubmit () {
+      const output = {
+        firstName: this.firstName,
+        lastName: this.lastName,
+      };
+      console.log(JSON.stringify(output));
+    },
+    validatePersonalIdNumber() {
+      if (this.personalIdNumber === '') {
+        this.personalIdNumberIsValid = false;
+        this.personalIdNumberErrorMessage = 'Rodné číslo je povinné';
+      } else if (!isValidCzechPersonalIdNumber(this.personalIdNumber)) {
+        this.personalIdNumberIsValid = false;
+        this.personalIdNumberErrorMessage = 'Neplatné rodné číslo';
+      } else {
+        this.personalIdNumberIsValid = true;
+      }
+    },
+    isValidCzechPersonalIdNumber(idNumber) {
+      const re = /^(\d{6})(\/)?(\d{3,4})$/;
+      const matches = idNumber.match(re);
+
+      if (!matches) {
+        return false;
+      }
+
+      const birthPart = matches[1];
+      const controlPart = matches[3];
+
+      if (controlPart.length === 3) {
+        if (parseInt(birthPart, 10) % 11 !== 0) {
+          return false;
+        }
+      } else {
+        const fullNumber = parseInt(birthPart + controlPart, 10);
+
+        if (fullNumber % 11 !== 0) {
+          if (fullNumber % 11 === 10 && controlPart[3] === '0') {
+            return true;
+          }
+          return false;
+        }
+      }
+
+      const year = parseInt(birthPart.slice(0, 2), 10) + 1900;
+      const month = parseInt(birthPart.slice(2, 4), 10) % 50;
+      const day = parseInt(birthPart.slice(4, 6), 10);
+
+      const date = new Date(year, month - 1, day);
+
+      return (
+          date.getFullYear() === year &&
+          date.getMonth() === month - 1 &&
+          date.getDate() === day
+      );
+    },
+    updateChildren() {
+      const diff = this.childrenCount - this.children.length;
+
+      if (diff > 0) {
+        for (let i = 0; i < diff; i++) {
+          this.children.push({ id: Date.now() + i, firstName: '', lastName: '' });
+        }
+      } else {
+        this.children.splice(this.childrenCount);
+      }
+    },
+    addChildren() {
+      this.childrenCount++;
+    },
+
   },
+  watch: {
+    childrenCount() {
+      this.updateChildren();
+    },
 
   computed: {
     favoriteColor () {
       return this.selectedColor === 'other'
           ? this.customFavoriteColor
           : this.selectedColor;
-    }
+    },
+    age() {
+      if (!this.isValidCzechPersonalIdNumber(this.personalIdNumber)) {
+        return null;
+      }
+
+      const birthPart = this.personalIdNumber.slice(0, 6);
+      const year = parseInt(birthPart.slice(0, 2), 10) + 1900;
+      const month = parseInt(birthPart.slice(2, 4), 10) % 50;
+      const day = parseInt(birthPart.slice(4, 6), 10);
+
+      const birthDate = new Date(year, month - 1, day);
+      const now = new Date();
+      const age = now.getFullYear() - birthDate.getFullYear();
+
+      return now.getMonth() < birthDate.getMonth() ||
+      (now.getMonth() === birthDate.getMonth() && now.getDate() < birthDate.getDate())
+          ? age - 1
+          : age;
+    },
+
+    gender() {
+      if (!this.isValidCzechPersonalIdNumber(this.personalIdNumber)) {
+        return null;
+      }
+
+      const birthPart = this.personalIdNumber.slice(0, 6);
+      const month = parseInt(birthPart.slice(2, 4), 10);
+
+      return month >= 50 ? 'Žena' : 'Muž';
+    },
   }
-}
+}}
 </script>
 
 <template>
@@ -57,6 +167,7 @@ export default {
         </label>
       </div>
     </figure>
+  </form>
 
     <h2>Osobní informace</h2>
 
@@ -67,6 +178,7 @@ export default {
           type="text"
           class="form-control"
           id="firstName"
+          v-model="firstName"
       >
     </div>
 
@@ -77,8 +189,12 @@ export default {
           type="text"
           class="form-control"
           id="lastName"
+          v-model="lastName"
       >
     </div>
+
+    <form @submit.prevent="onSubmit">
+
 
     <div class="form-group">
       <label for="favoriteColor">Oblíbená barva</label>
@@ -97,7 +213,6 @@ export default {
         <option value="other">Jiná</option>
       </select>
 
-      <!-- Vastní oblíbenou barvu zadá uživatel pouze tehdy zvolí-li v selectu výše možnost "Jiná" -->
       <div v-show="selectedColor === 'other'">
         <label class="mt-2" for="customFavoriteColor">Zadejte vlastní oblíbenou barvu:</label>
 
@@ -110,10 +225,6 @@ export default {
         >
       </div>
 
-      <!--
-          Kromě toho, že se do tohoto textu vypíše zvolená barva,
-          slovo barvy (př.: Zelená) bude mít barvu písma odpovídající zvolené barvě.
-      -->
       <small
           class="form-text"
           :style="{ 'color': favoriteColor, 'font-weight': 'bold' }"
@@ -125,31 +236,22 @@ export default {
     <div class="form-group">
       <label for="personalIdNumber">Rodné číslo</label>
 
-      <!--
-        Po validaci obdrží input třídu is-valid resp. is-invalid.
-        Validace nastane při @blur události.
-      -->
       <input
           type="text"
-          class="form-control is-invalid"
+          :class="['form-control', personalIdNumberIsValid === true ? 'is-valid' : (personalIdNumberIsValid === false ? 'is-invalid' : '')]"
           id="personalIdNumber"
           placeholder="890101/1234"
+          v-model="personalIdNumber"
+          @blur="validatePersonalIdNumber"
       >
 
       <div class="invalid-feedback">
-        <!--
-          Validační hláška bude dynamická v závislosti na chybě, která nastala.
-          Možné chyby:
-              - rodné číslo nezadáno
-              - neplatné rodné číslo dle https://cs.wikipedia.org/wiki/Rodn%C3%A9_%C4%8D%C3%ADslo#Kontroln%C3%AD_%C4%8D%C3%ADslice
-        -->
-        Rodné číslo je povinné
+        {{ personalIdNumberErrorMessage }}
       </div>
 
       <small class="form-text text-muted">
-        <!-- Tyto hodnoty budou dynamicky vypočteny z rodného čísla -->
-        Věk: 18,
-        Pohlaví: Muž/Žena
+        Věk: {{ age }},
+        Pohlaví: {{ gender }}
       </small>
     </div>
 

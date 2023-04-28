@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Úvod do VueJS - 1. tematická práce</title>
+
+    <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css"
+        integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2"
+        crossorigin="anonymous"
+    >
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+
+    <style>
+        body {
+            background: #eee;
+        }
+
+        #app {
+            background: white;
+            box-shadow: 1px 1px 3px #ccc;
+        }
+
+        h2 {
+            border-bottom: 1px solid #ccc;
+            margin: .4em 0 .6em 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app" class="container p-4 my-4">
+        <h1 class="mb-4">Úvod do VueJS - 1. tematická práce</h1>
+
+        <form>
+            <figure class="figure">
+                <img
+                    src="https://via.placeholder.com/150"
+                    class="figure-img img-fluid rounded"
+                    alt="Profile picture"
+                >
+
+                <!--
+                    Po zvolení obrázku se placeholder hodnota nahradí za preview skutečného obrázku.
+                    Hint: URL.createObjectURL()
+                -->
+                <div class="custom-file">
+                    <input
+                        type="file"
+                        class="custom-file-input"
+                        id="profilePicture"
+                    >
+
+                    <label
+                        class="custom-file-label"
+                        for="profilePicture"
+                    >
+                        Změnit profilový obrázek
+                    </label>
+                </div>
+            </figure>
+
+            <h2>Osobní informace</h2>
+
+            <div class="form-group">
+                <label for="firstName">Jméno</label>
+
+                <input
+                  type="text"
+                  class="form-control"
+                  id="firstName"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="lastName">Příjmení</label>
+  
+                <input
+                  type="text"
+                  class="form-control"
+                  id="lastName"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="favoriteColor">Oblíbená barva</label>
+
+                <select class="form-control" id="favoriteColor">
+                  <option>Modrá</option>
+                  <option>Červená</option>
+                  <option>Bílá</option>
+                  <option>Černá</option>
+                  <option>Zelená</option>
+                  <option>Jiná</option>
+                </select>
+
+                <!-- Vastní oblíbenou barvu zadá uživatel pouze tehdy zvolí-li v selectu výše možnost "Jiná" -->
+                <label class="mt-2" for="customFavoriteColor">Zadejte vlastní oblíbenou barvu:</label>
+
+                <input
+                    type="text"
+                    class="form-control"
+                    placeholder="#ff00ff"
+                    id="customFavoriteColor"
+                >
+
+                <!--
+                    Kromě toho, že se do tohoto textu vypíše zvolená barva,
+                    slovo barvy (př.: Zelená) bude mít barvu písma odpovídající zvolené barvě.
+                -->
+                <small class="form-text text-muted">
+                    Vaše oblíbená barve je: Zelená/#ff00ff
+                </small>
+            </div>
+
+            <div class="form-group">
+              <label for="personalIdNumber">Rodné číslo</label>
+              
+              <!--
+                Po validaci obdrží input třídu is-valid resp. is-invalid.
+                Validace nastane při @blur události.
+              -->
+              <input
+                type="text"
+                class="form-control is-invalid"
+                id="personalIdNumber"
+                placeholder="890101/1234"
+              >
+
+              <div class="invalid-feedback">
+                  <!--
+                    Validační hláška bude dynamická v závislosti na chybě, která nastala.
+                    Možné chyby:
+                        - rodné číslo nezadáno
+                        - neplatné rodné číslo dle https://cs.wikipedia.org/wiki/Rodn%C3%A9_%C4%8D%C3%ADslo#Kontroln%C3%AD_%C4%8D%C3%ADslice
+                  -->
+                  Rodné číslo je povinné
+              </div>
+
+              <small class="form-text text-muted">
+                <!-- Tyto hodnoty budou dynamicky vypočteny z rodného čísla -->
+                Věk: 18,
+                Pohlaví: Muž/Žena
+              </small>
+            </div>
+
+            <div class="form-group">
+                <label for="childrenCount">Počet dětí</label>
+  
+                <!-- Výchozí hodnota bude 0 -->
+                <input
+                  v-model.number="childrenCount"
+                  type="number"
+                  class="form-control"
+                  id="childrenCount"
+                  min="0"
+                >
+
+                {{ childrenCount }}
+            </div>
+
+            <!-- Pokud bude počet dětí > 0 sobrazí se textové inputy pro každé dítě -->
+
+            <div v-show="childrenCount > 0">
+                <h2>Děti</h2>
+
+                <div
+                    v-for="(child, index) in children"
+                    class="my-2"
+                    :key="child.id"
+                >
+                    Dítě {{ index + 1 }}:
+
+                    <div class="form-row">
+                        <div class="col">
+                            <input
+                                v-model="child.firstName"
+                                type="text"
+                                class="form-control"
+                                placeholder="Jméno"
+                            >
+                        </div>
+        
+                        <div class="col">
+                            <input
+                                v-model="child.lastName"
+                                type="text"
+                                class="form-control"
+                                placeholder="Příjmení"
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <button
+                    type="button"
+                    class="btn btn-primary"
+                    @click="addChildren"
+                >
+                    Add child
+                </button>
+
+<pre><code>{{ children }}</code></pre>
+            </div>
+
+            <h2>Trvalý pobyt</h2>
+
+            <div class="form-row">
+                <div class="col-md-6 mb-3">
+                    <label for="city">Město</label>
+                    <input
+                        type="text"
+                        class="form-control"
+                        id="city"
+                        required
+                    >
+                </div>
+
+                <div class="col-md-6 mb-6">
+                    <label for="street">Ulice</label>
+                    <input
+                        type="text"
+                        class="form-control"
+                        id="street"
+                        required
+                    >
+                </div>
+            </div>
+
+            <!-- Pokud uživatel zaškrtne tuto možnost, zobrazí se mu další dvě pole pro korespondenční adresu -->
+            <div class="form-group form-check">
+                <input
+                    type="checkbox"
+                    class="form-check-input"
+                    id="differentMailingAddress"
+                >
+
+                <label class="form-check-label" for="differentMailingAddress">
+                    Korespondenční adresa se liší od trvalé
+                </label>
+            </div>
+
+            <h2>Korespondenční adresa</h2>
+
+            <div class="form-row">
+                <div class="col-md-6 mb-3">
+                    <label for="mailingAddressCity">Město</label>
+                    <input
+                        type="text"
+                        class="form-control"
+                        id="mailingAddressCity"
+                        required
+                    >
+                </div>
+
+                <div class="col-md-6 mb-6">
+                    <label for="mailingAddressStreet">Ulice</label>
+                    <input
+                        type="text"
+                        class="form-control"
+                        id="mailingAddressStreet"
+                        required
+                    >
+                </div>
+            </div>
+
+            <h2>Zákonný zástupce</h2>
+
+            <!-- Pole pro zákonného zástupce se zobrazí pouze tehdy, je-li věk nižší než 18 -->
+            <div class="form-group">
+                <label for="legalRepresentativeFirstName">Jméno</label>
+
+                <input
+                  type="text"
+                  class="form-control"
+                  id="legalRepresentativeFirstName"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="legalRepresentativeLastName">Příjmení</label>
+  
+                <input
+                  type="text"
+                  class="form-control"
+                  id="legalRepresentativeLastName"
+                >
+            </div>
+
+            <h2>Ostatní</h2>
+
+            <div class="form-group">
+                <label for="note">Poznámka</label>
+                <textarea class="form-control" id="note" rows="3"></textarea>
+                <!-- Automaticky dopočítávaná hodnota, jakmile se dostane na 5 a méně znaků zčervená -->
+                <small class="text-right form-text text-muted">Využito 42/100 znaků</small>
+            </div>
+
+            <button
+                type="submit"
+                class="btn btn-primary"
+            >
+                Odeslat
+            </button>
+          </form>
+
+          <h2>Odeslaná data:</h2>
+
+          <pre><code>
+{
+    "firstName": "John",
+    "lastName": "Doe",
+    "favoriteColor": "green",
+    "personalIdNumber": "890101/1234",
+    "children": [
+        { "firstName": "Jinny", "lastName": "Doe" },
+        { "firstName": "James": "lastName": "Doe" }
+    ]
+    "city": "Ústí nad Labem",
+    "street": "Masarykova",
+    "mailingAddress": {
+        "city": "Prague",
+        "street": "Pařížská"
+    },
+    "legalRepresentative": {
+        "firstName": "Bob",
+        "lastName": "Doe"
+    },
+    "note": "Lorem ipsum dolor sit amet"
+}
+          </code></pre>
+    </div>    
+
+    <script>
+        function uid() {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            let r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+        }
+
+        const getChildren = (count = 1) => {
+            const result = [];
+
+            for(let i = 0; i < count; i++) {
+                result.push({
+                    id: uid(),
+                    firstName: '',
+                    lastName: ''
+                })
+            }
+
+            return result;
+        };
+
+        const vm = new Vue({
+            el: '#app',
+            data: {
+                childrenCount: 0,
+                children: []
+            },
+
+            methods: {
+                addChildren() {
+                    this.children.push(...getChildren(1));
+                }
+            },
+
+            watch: {
+                childrenCount(newCount, oldCount) {
+                    const diff = newCount - oldCount;
+
+                    if (diff > 0) {
+                        this.children.push(...getChildren(diff))
+                    } else {
+                        const toRemove = Math.abs(diff);
+
+                        // [a, b, c, d, e, f, g]
+                        //  0  1  2  3  4  5  6
+                        // length = 7
+                        // toRemove = 2
+                        // 
+                        this.children.splice(
+                            this.children.length - toRemove,
+                            toRemove
+                        );
+                    }
+                }
+            }
+        })
+    </script>
+</body>
+</html>
